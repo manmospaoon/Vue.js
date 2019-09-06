@@ -30,21 +30,36 @@
         </form>
       </header>
       <div>
-        <a
-          v-for="photo in photos"
-          v-bind:key="photo.id"
-          v-bind:href="photo.pageURL"
-          v-tooltip="photo.text"
-          class="flickr-link"
-          target="_blank"
-        >
-          <img
-            v-bind:src="photo.imageURL"
-            v-bind:alt="photo.text"
-            width="150"
-            height="150"
-          />
-        </a>
+        <p v-if="isInitalized" class="text-center">検索してください。</p>
+        <p v-show="isFetching" class="position-relative text-center">
+          <span
+            class="loading-icon glyphicon glyphicon-refresh"
+            aria-hidden="true"
+          ></span>
+        </p>
+        <p v-show="isFailed" class="text-center">
+          データの取得に失敗しました。しばらく時間を置いてから、再度お試しください。
+        </p>
+        <p v-show="isNotfound" class="text-center">
+          写真が見つかりませんでした。別の言葉で検索してみてください。
+        </p>
+        <template v-if="isFound">
+          <a
+            v-for="photo in photos"
+            v-bind:key="photo.id"
+            v-bind:href="photo.pageURL"
+            v-tooltip="photo.text"
+            class="flickr-link"
+            target="_blank"
+          >
+            <img
+              v-bind:src="photo.imageURL"
+              v-bind:alt="photo.text"
+              width="150"
+              height="150"
+            />
+          </a>
+        </template>
       </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>

@@ -4,6 +4,12 @@
 // Flickr API key
 var apiKey = "ここにAPIキーを入れてください";
 
+var IS_INITIALIZED = "IS_INITIALIZED";
+var IS_FETCHING = "IS_FETCHING";
+var IS_FAILED = "IS_FAILED";
+var IS_FOUND = "IS_FOUND";
+var IS_NOT_FOUND = "IS_NOT_FOUND";
+
 Vue.directive("tooltip", {
   bind: function(el, binding) {
     $(el).tooltip({
@@ -19,9 +25,39 @@ Vue.directive("tooltip", {
 new Vue({
   el: "#app",
   data: {
-    photos: []
+    photos: [],
+    currentState: IS_INITIALIZED
   },
+  computed: {
+    isInitalized: function() {
+      return this.currentState === IS_INITIALIZED;
+    },
+    isFetching: function() {
+      return this.currentState === IS_FETCHING;
+    },
+    isFailed: function() {
+      return this.currentState === IS_FAILED;
+    },
+    isFound: function() {
+      return this.currentState === IS_FOUND;
+    },
+    isNotfound: function() {
+      return this.currentState === IS_NOT_FOUND;
+    }
+  },  
   methods: {
+    toFetching: function() {
+      this.currentState = IS_FETCHING;
+    },
+    toFailed: function() {
+      this.currentState = IS_FAILED;
+    },
+    toFound: function() {
+      this.currentState = IS_FOUND;
+    },
+    toNotfound: function(){
+      this.currentState = IS_NOT_FOUND;
+    },
     getFlickrImageURL: function(photo, size) {
       var url =
         "https://farm" +
@@ -64,18 +100,38 @@ new Vue({
         nojsoncallback: 1 
       });
       var flickr_url = "https://api.flickr.com/services/rest/?" + parameters;
+      
+      if (this.isFetching && searchText === vm.prevSearchText) {
+        return;
+      }
 
+      vm.prevSearchText = searchText;
+
+      this.toFetching();
       $.getJSON(flickr_url, function(data) {
-        if (data.stat === "ok") {
-          vm.photos = data.photos.photo.map(function(photo) {
-            return {
-              id: photo.id,
-              imageURL: vm.getFlickrImageURL(photo, "q"),
-              pageURL: vm.getFlickrPageURL(photo),
-              text: vm.getFlickrText(photo)
-            };
-          });
+        if (data.stat !== "ok") {
+          vm.toFailed();
+          return;
         }
+
+        var _photos = data.photos.photo;
+
+        if (_photos.length === 0) {
+          vm.toNotfound();
+          return;
+        }
+
+        vm.photos = _photos.map(function(photo) {
+          return {
+            id: photo.id,
+            imageURL: vm.getFlickrImageURL(photo, "q"),
+            pageURL: vm.getFlickrPageURL(photo),
+            text: vm.getFlickrText(photo)
+          };
+        });
+        vm.toFound();
+      }).fail(function() {
+        vm.toFailed();
       });
     }
   }
